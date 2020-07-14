@@ -21,17 +21,16 @@ class SelfAttention2d(nn.Module):
         assert stride in [1, 2]
 
         self.conv_out = nn.Conv2d(in_channels, out_channels - dv, kernel_size, stride=stride, padding=(kernel_size - 1) // 2)
-        self.conv_kqv = nn.Conv2d(in_channels, 2 * dk + dv, kernel_size=1)
+        self.conv_kqv = nn.Conv2d(in_channels, 2 * dk + dv, kernel_size=1, stride=stride)
         self.attn_out = nn.Conv2d(dv, dv, 1)
-        self.avgpool = nn.AvgPool2d(kernel_size=3, stride=2, padding=1)
 
         if self.relative:
             self.key_rel_w = nn.Parameter(torch.randn((2 * shape - 1, dk // Nh), requires_grad=True))
             self.key_rel_h = nn.Parameter(torch.randn((2 * shape - 1, dk // Nh), requires_grad=True))
 
     def forward(self, x):
-        N, _, H, W = x.size()
         conv_out = self.conv_out(x)
+        N, _, H, W = conv_out.size()
 
         flat_k, flat_q, flat_v, k, q, v = self.compute_flat_kqv(x, self.dk, self.dv, self.Nh)
         logits = torch.matmul(flat_q.transpose(2, 3), flat_k)
@@ -45,8 +44,6 @@ class SelfAttention2d(nn.Module):
         attn_out = torch.reshape(attn_out, (N, self.Nh, self.dv // self.Nh, H, W))
         attn_out = self.combine_heads_2d(attn_out)
         attn_out = self.attn_out(attn_out)
-        if self.stride == 2:
-            attn_out = self.avgpool(attn_out)
         return torch.cat((conv_out, attn_out), dim=1)
 
     def compute_flat_kqv(self, x, dk, dv, Nh):
