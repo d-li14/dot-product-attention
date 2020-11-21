@@ -18,9 +18,9 @@ class DoubleAttention(nn.Module):
 
     def forward(self, x):
         n, c, h, w = x.size()
-        key = self.key(x).reshape((n, self.key_channels, h * w))
-        query = self.query(x).reshape(n, self.key_channels, h * w)
-        value = self.value(x).reshape((n, self.value_channels, h * w))
+        key = self.key(x).view((n, self.key_channels, h * w))
+        query = self.query(x).view(n, self.key_channels, h * w)
+        value = self.value(x).view((n, self.value_channels, h * w))
         head_key_channels = self.key_channels // self.num_head
         head_value_channels = self.value_channels // self.num_head
         
@@ -29,7 +29,7 @@ class DoubleAttention(nn.Module):
             _key = F.softmax(key[:, i * head_key_channels: (i + 1) * head_key_channels, :], dim=2)
             _query = F.softmax(query[:, i * head_key_channels: (i + 1) * head_key_channels, :], dim=1)
             _value = value[:, i * head_value_channels: (i + 1) * head_value_channels, :]
-            _attention = (_value @ _key.transpose(1, 2) @ _query).reshape(n, head_value_channels, h, w)
+            _attention = (_value @ _key.transpose(1, 2) @ _query).view(n, head_value_channels, h, w)
             attention.append(_attention)
 
         x += self.expansion(torch.cat(attention, dim=1))
