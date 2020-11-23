@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class SelfAttention2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dk, dv, Nh, shape=0, relative=False, stride=1):
+    def __init__(self, in_channels, out_channels, kernel_size, dk, dv, Nh, size=None, relative=False, stride=1):
         super(SelfAttention2d, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -25,8 +25,8 @@ class SelfAttention2d(nn.Module):
         self.attn_out = nn.Conv2d(dv, dv, 1)
 
         if self.relative:
-            self.key_rel_w = nn.Parameter(torch.randn((2 * shape - 1, dk // Nh), requires_grad=True))
-            self.key_rel_h = nn.Parameter(torch.randn((2 * shape - 1, dk // Nh), requires_grad=True))
+            self.key_rel_w = nn.Parameter(torch.randn((2 * size - 1, dk // Nh), requires_grad=True))
+            self.key_rel_h = nn.Parameter(torch.randn((2 * size - 1, dk // Nh), requires_grad=True))
 
     def forward(self, x):
         conv_out = self.conv_out(x)

@@ -136,7 +136,7 @@ class AABottleneck(nn.Module):
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, norm_layer=None, shape=0, downsize=False):
+                 base_width=64, dilation=1, norm_layer=None, size=None, downsize=False):
         super(AABottleneck, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -145,7 +145,7 @@ class AABottleneck(nn.Module):
         self.conv1 = conv1x1(inplanes, width)
         self.bn1 = norm_layer(width)
         #self.conv2 = conv3x3(width, width, stride, groups, dilation)
-        self.conv2 = SelfAttention2d(in_channels=width, out_channels=width, kernel_size=3, dk=_make_divisible(0.2*width, 8), dv=_make_divisible(0.1*width, 8), Nh=8, shape=shape//2 if downsize else shape, relative=True, stride=stride)
+        self.conv2 = SelfAttention2d(in_channels=width, out_channels=width, kernel_size=3, dk=_make_divisible(0.2*width, 8), dv=_make_divisible(0.1*width, 8), Nh=8, size=size//2 if downsize else size, relative=True, stride=stride)
         self.bn2 = norm_layer(width)
         self.conv3 = conv1x1(width, planes * self.expansion)
         self.bn3 = norm_layer(planes * self.expansion)
@@ -213,11 +213,11 @@ class AAResNet(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_attention_layer(AABottleneck, 128, layers[1], stride=2,
-                                       dilate=replace_stride_with_dilation[0], shape=28, downsize=True)
+                                       dilate=replace_stride_with_dilation[0], size=28, downsize=True)
         self.layer3 = self._make_attention_layer(AABottleneck, 256, layers[2], stride=2,
-                                       dilate=replace_stride_with_dilation[1], shape=14, downsize=False)
+                                       dilate=replace_stride_with_dilation[1], size=14, downsize=False)
         self.layer4 = self._make_attention_layer(AABottleneck, 512, layers[3], stride=2,
-                                       dilate=replace_stride_with_dilation[2], shape=7, downsize=False)
+                                       dilate=replace_stride_with_dilation[2], size=7, downsize=False)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
@@ -262,7 +262,7 @@ class AAResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _make_attention_layer(self, block, planes, blocks, stride=1, dilate=False, shape=28, downsize=False):
+    def _make_attention_layer(self, block, planes, blocks, stride=1, dilate=False, size=None, downsize=False):
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
@@ -277,12 +277,12 @@ class AAResNet(nn.Module):
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
-                            self.base_width, previous_dilation, norm_layer, shape, downsize))
+                            self.base_width, previous_dilation, norm_layer, size, downsize))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes, groups=self.groups,
                                 base_width=self.base_width, dilation=self.dilation,
-                                norm_layer=norm_layer, shape=shape, downsize=downsize))
+                                norm_layer=norm_layer, size=size, downsize=downsize))
 
         return nn.Sequential(*layers)
 
