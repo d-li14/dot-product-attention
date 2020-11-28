@@ -10,4 +10,4 @@
 
 Models are trained on 32 GPUs with the mini-batch size 32 per GPU for 100 epochs. The SGD optimizer with initial learning rate 0.4, momentum 0.9, weight decay 0.0001 is adopted for training. The learning rate anneals following the cosine schedule, with linear warmup for the first 5 epochs with the warmup ratio of 0.25.
 
-† initial learning rate 0.1 w/o warmup for 100 epochs, w/ label smoothing, mini-batch size 32 per GPU on 8 GPUs
+† initial learning rate 0.1 w/o warmup for 130 epochs, w/ label smoothing, mini-batch size 32 per GPU on 8 GPUs
